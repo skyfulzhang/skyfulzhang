@@ -4,7 +4,7 @@
 ```
 仓库地址：https://github.com/skyfulzhang/myblog
 线上部署：http://111.231.4.190:8088/blog/index/
-账号密码：admin/admin123456
+账号密码：skyful/skyful
 ```
 
 
