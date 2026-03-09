@@ -1,0 +1,116 @@
+name: K6 Performance Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      script_path:
+        description: 'k6 script path (relative to repo root)'
+        required: true
+        default: 'perf-test-agent/k6_scripts/templates/http_load_test.js'
+      vus:
+        description: 'Number of virtual users'
+        required: false
+        default: '10'
+      duration:
+        description: 'Test duration (e.g., 30s, 1m, 5m)'
+        required: false
+        default: '30s'
+      test_name:
+        description: 'Test run name for reporting'
+        required: false
+        default: 'performance-test'
+      base_url:
+        description: 'Target base URL (overrides script default)'
+        required: false
+        default: 'https://httpbin.org'
+      thresholds:
+        description: 'Override thresholds (JSON string, reserved for future use)'
+        required: false
+        default: ''
+
+jobs:
+  performance-test:
+    name: Run K6 Performance Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up test environment
+        run: |
+          # 确定报告保存目录（与脚本同目录下的 reports 子目录）
+          SCRIPT_DIR=$(dirname "${{ github.event.inputs.script_path }}")
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          TEST_NAME="${{ github.event.inputs.test_name }}"
+
+          echo "SCRIPT_DIR=${SCRIPT_DIR}" >> "$GITHUB_ENV"
+          echo "TIMESTAMP=${TIMESTAMP}" >> "$GITHUB_ENV"
+          echo "REPORT_JSON=${SCRIPT_DIR}/reports/${TEST_NAME}_${TIMESTAMP}_summary.json" >> "$GITHUB_ENV"
+          echo "REPORT_HTML=${SCRIPT_DIR}/reports/${TEST_NAME}_${TIMESTAMP}_report.html" >> "$GITHUB_ENV"
+          echo "REPORT_DIR=${SCRIPT_DIR}/reports" >> "$GITHUB_ENV"
+
+          mkdir -p "${SCRIPT_DIR}/reports"
+
+      - name: Run K6 performance test
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: ${{ github.event.inputs.script_path }}
+          flags: >-
+            --vus ${{ github.event.inputs.vus || '10' }}
+            --duration ${{ github.event.inputs.duration || '30s' }}
+            --summary-export=${{ env.REPORT_JSON }}
+        env:
+          K6_BASE_URL: ${{ github.event.inputs.base_url || 'https://httpbin.org' }}
+          K6_TEST_NAME: ${{ github.event.inputs.test_name || 'performance-test' }}
+          K6_VUS: ${{ github.event.inputs.vus || '10' }}
+          K6_DURATION: ${{ github.event.inputs.duration || '30s' }}
+          REPORT_DIR: ${{ env.REPORT_DIR }}
+
+      - name: Generate HTML report
+        if: always()
+        run: |
+          pip install jinja2 --quiet
+          python3 perf-test-agent/.github/scripts/generate_html_report.py \
+            --json "${{ env.REPORT_JSON }}" \
+            --output "${{ env.REPORT_HTML }}" \
+            --test-name "${{ github.event.inputs.test_name }}" \
+            --run-id "${{ github.run_id }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Performance gate check
+        if: always()
+        run: |
+          python3 perf-test-agent/.github/scripts/check_thresholds.py \
+            --report "${{ env.REPORT_JSON }}"
+
+      - name: Post summary to job summary
+        if: always()
+        run: |
+          python3 perf-test-agent/.github/scripts/post_summary.py \
+            --report "${{ env.REPORT_JSON }}" \
+            --test-name "${{ github.event.inputs.test_name }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Commit reports to repository
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${{ env.REPORT_DIR }}/"
+          git diff --staged --quiet || git commit -m "perf: add test report for ${{ github.event.inputs.test_name }} [run ${{ github.run_id }}]"
+          git push origin HEAD
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-reports-${{ github.event.inputs.test_name }}-${{ github.run_id }}
+          path: |
+            ${{ env.REPORT_DIR }}/
+          retention-days: 30
