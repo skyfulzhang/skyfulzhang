@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "perf-test-agent"
+version = "0.1.0"
+description = "企业级性能测试智能体 - 基于 LangChain + k6 + GitHub Actions"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-community>=0.3.0",
+    "langchain-core>=0.3.0",
+    "openai>=1.50.0",
+    "pygithub>=2.4.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.5.0",
+    "structlog>=24.4.0",
+    "tenacity>=9.0.0",
+    "typer[all]>=0.12.0",
+    "rich>=13.9.0",
+    "httpx>=0.27.0",
+    "jinja2>=3.1.0",
+    "python-dotenv>=1.0.0",
+    "aiohttp>=3.10.0",
+]
+
+[project.scripts]
+perf-agent = "agent.main:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agent*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = ["E", "W", "F", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = ["E501", "B008", "N805"]
+
+[tool.ruff.isort]
+known-first-party = ["agent"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = ["tests/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests (require external services)",
+    "slow: Slow tests",
+]
+
+[tool.coverage.run]
+source = ["agent"]
+omit = ["tests/*", "**/__init__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]

@@ -1,0 +1,128 @@
+name: K6 Scheduled Performance Test
+
+on:
+  # 每天 UTC 02:00（北京时间 10:00）执行定时回归测试
+  schedule:
+    - cron: '0 2 * * *'
+  # 支持手动触发
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Test environment (prod/staging)'
+        required: false
+        default: 'staging'
+
+jobs:
+  scheduled-performance-test:
+    name: Scheduled K6 Regression Test (${{ matrix.test_scenario.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # 矩阵策略：并行测试多个核心场景
+    strategy:
+      fail-fast: false   # 一个场景失败不影响其他场景
+      matrix:
+        test_scenario:
+          - name: load-test
+            script: 'perf-test-agent/k6_scripts/templates/http_load_test.js'
+            vus: '5'
+            duration: '1m'
+            base_url: 'https://httpbin.org'
+          - name: api-test
+            script: 'perf-test-agent/k6_scripts/templates/api_test.js'
+            vus: '3'
+            duration: '1m'
+            base_url: 'https://httpbin.org'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up environment
+        run: |
+          SCRIPT_DIR=$(dirname "${{ matrix.test_scenario.script }}")
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          TEST_NAME="scheduled-${{ matrix.test_scenario.name }}"
+
+          echo "SCRIPT_DIR=${SCRIPT_DIR}" >> "$GITHUB_ENV"
+          echo "REPORT_JSON=${SCRIPT_DIR}/reports/${TEST_NAME}_${TIMESTAMP}_summary.json" >> "$GITHUB_ENV"
+          echo "REPORT_HTML=${SCRIPT_DIR}/reports/${TEST_NAME}_${TIMESTAMP}_report.html" >> "$GITHUB_ENV"
+          echo "REPORT_DIR=${SCRIPT_DIR}/reports" >> "$GITHUB_ENV"
+          echo "TEST_NAME=${TEST_NAME}" >> "$GITHUB_ENV"
+
+          mkdir -p "${SCRIPT_DIR}/reports"
+
+      - name: Run K6 test - ${{ matrix.test_scenario.name }}
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: ${{ matrix.test_scenario.script }}
+          flags: >-
+            --vus ${{ matrix.test_scenario.vus }}
+            --duration ${{ matrix.test_scenario.duration }}
+            --summary-export=${{ env.REPORT_JSON }}
+        env:
+          K6_BASE_URL: ${{ matrix.test_scenario.base_url }}
+          K6_TEST_NAME: ${{ env.TEST_NAME }}
+          K6_VUS: ${{ matrix.test_scenario.vus }}
+          K6_DURATION: ${{ matrix.test_scenario.duration }}
+          REPORT_DIR: ${{ env.REPORT_DIR }}
+
+      - name: Generate HTML report
+        if: always()
+        run: |
+          pip install jinja2 --quiet
+          python3 perf-test-agent/.github/scripts/generate_html_report.py \
+            --json "${{ env.REPORT_JSON }}" \
+            --output "${{ env.REPORT_HTML }}" \
+            --test-name "${{ env.TEST_NAME }}" \
+            --run-id "${{ github.run_id }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Check thresholds
+        if: always()
+        id: threshold_check
+        run: |
+          python3 perf-test-agent/.github/scripts/check_thresholds.py \
+            --report "${{ env.REPORT_JSON }}" || echo "THRESHOLD_FAILED=true" >> "$GITHUB_ENV"
+
+      - name: Post job summary
+        if: always()
+        run: |
+          python3 perf-test-agent/.github/scripts/post_summary.py \
+            --report "${{ env.REPORT_JSON }}" \
+            --test-name "${{ env.TEST_NAME }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scheduled-k6-${{ matrix.test_scenario.name }}-${{ github.run_id }}
+          path: ${{ env.REPORT_DIR }}/
+          retention-days: 7
+
+      # 定时测试失败时自动创建 GitHub Issue
+      - name: Create Issue on failure
+        if: failure() || env.THRESHOLD_FAILED == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `⚠️ 定时性能测试失败: ${{ matrix.test_scenario.name }}`;
+            const body = [
+              `## 📊 性能测试失败通知`,
+              ``,
+              `- **测试场景**: ${{ matrix.test_scenario.name }}`,
+              `- **运行时间**: ${new Date().toISOString()}`,
+              `- **Run ID**: ${{ github.run_id }}`,
+              `- **详情**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
+              ``,
+              `请检查性能测试报告并修复相关问题。`,
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['performance', 'automated'],
+            });
