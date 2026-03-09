@@ -2,7 +2,8 @@
  * k6_scripts/utils/helpers.js
  * k6 公共辅助函数库 - 在各模板中通过本地导入使用
  */
-import { check } from 'k6';
+import http from 'k6/http';
+import { check, sleep } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 
 // ── 公共指标 ──────────────────────────────────────────────────────────────────
@@ -17,7 +18,6 @@ export const sharedResponseTime = new Trend('shared_response_time', true);
  * @returns {object} k6 Response 对象
  */
 export function getWithRetry(url, params, maxRetries = 3) {
-  import { sleep } from 'k6';
   let res;
   for (let i = 0; i < maxRetries; i++) {
     res = http.get(url, params);
