@@ -1,0 +1,10 @@
+requests>=2.31.0
+requests-mock>=1.11.0
+jsonpath-ng>=1.6.0
+jmespath>=1.0.1
+rich>=13.7.0
+loguru>=0.7.2
+pyyaml>=6.0.1
+pytest>=7.4.0
+pytest-cov>=4.1.0
+dataclasses-json>=0.6.3

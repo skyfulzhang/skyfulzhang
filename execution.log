@@ -1,0 +1,34 @@
+2026-05-04 08:57:20 | INFO | 链路开始: ecommerce_order_chain - 商品下单完整流程
+2026-05-04 08:57:20 | INFO | 步骤开始: step_login - 用户登录 | POST https://api.example.com/api/auth/login
+2026-05-04 08:57:21 | INFO | 步骤结束: step_login | 状态=success | 耗时=2ms | 断言=3/3
+2026-05-04 08:57:21 | INFO | 步骤开始: step_search - 搜索商品 | GET https://api.example.com/api/products/search
+2026-05-04 08:57:21 | INFO | 步骤结束: step_search | 状态=success | 耗时=2ms | 断言=2/2
+2026-05-04 08:57:21 | INFO | 步骤开始: step_create_order - 创建订单 | POST https://api.example.com/api/orders
+2026-05-04 08:57:21 | INFO | 步骤结束: step_create_order | 状态=success | 耗时=2ms | 断言=3/3
+2026-05-04 08:57:21 | INFO | 步骤开始: step_query_order - 查询订单 | GET https://api.example.com/api/orders/ORD20240001
+2026-05-04 08:57:21 | INFO | 步骤结束: step_query_order | 状态=success | 耗时=1ms | 断言=2/2
+2026-05-04 08:57:21 | INFO | 链路结束: ecommerce_order_chain | 状态=success | 耗时=216ms
+2026-05-04 08:57:21 | INFO | 链路开始: ecommerce_pay_chain - 下单并支付完整流程
+2026-05-04 08:57:21 | INFO | 步骤开始: step_login - 用户登录 | POST https://api.example.com/api/auth/login
+2026-05-04 08:57:21 | INFO | 步骤结束: step_login | 状态=success | 耗时=2ms | 断言=2/2
+2026-05-04 08:57:21 | INFO | 步骤开始: step_search - 搜索商品 | GET https://api.example.com/api/products/search
+2026-05-04 08:57:21 | INFO | 步骤结束: step_search | 状态=success | 耗时=2ms | 断言=1/1
+2026-05-04 08:57:21 | INFO | 步骤开始: step_product_detail - 获取商品详情 | GET https://api.example.com/api/products/P20240001
+2026-05-04 08:57:21 | INFO | 步骤结束: step_product_detail | 状态=success | 耗时=1ms | 断言=2/2
+2026-05-04 08:57:21 | INFO | 步骤开始: step_create_order - 创建订单 | POST https://api.example.com/api/orders
+2026-05-04 08:57:21 | INFO | 步骤结束: step_create_order | 状态=success | 耗时=2ms | 断言=2/2
+2026-05-04 08:57:21 | INFO | 步骤开始: step_pay_order - 支付订单 | POST https://api.example.com/api/orders/ORD20240001/pay
+2026-05-04 08:57:21 | INFO | 步骤结束: step_pay_order | 状态=success | 耗时=2ms | 断言=2/2
+2026-05-04 08:57:21 | INFO | 步骤开始: step_query_order - 查询订单 | GET https://api.example.com/api/orders/ORD20240001
+2026-05-04 08:57:21 | INFO | 步骤结束: step_query_order | 状态=success | 耗时=1ms | 断言=2/2
+2026-05-04 08:57:21 | INFO | 链路结束: ecommerce_pay_chain | 状态=success | 耗时=216ms
+2026-05-04 08:57:21 | INFO | 链路开始: ecommerce_order_chain - 商品下单完整流程
+2026-05-04 08:57:21 | INFO | 步骤开始: step_login - 用户登录 | POST https://api.example.com/api/auth/login
+2026-05-04 08:57:21 | INFO | 步骤结束: step_login | 状态=success | 耗时=1ms | 断言=3/3
+2026-05-04 08:57:21 | INFO | 步骤开始: step_search - 搜索商品 | GET https://api.example.com/api/products/search
+2026-05-04 08:57:21 | INFO | 步骤结束: step_search | 状态=success | 耗时=2ms | 断言=2/2
+2026-05-04 08:57:21 | INFO | 步骤开始: step_create_order - 创建订单 | POST https://api.example.com/api/orders
+2026-05-04 08:57:21 | INFO | 步骤结束: step_create_order | 状态=success | 耗时=2ms | 断言=3/3
+2026-05-04 08:57:21 | INFO | 步骤开始: step_query_order - 查询订单 | GET https://api.example.com/api/orders/ORD20240001
+2026-05-04 08:57:21 | INFO | 步骤结束: step_query_order | 状态=success | 耗时=1ms | 断言=2/2
+2026-05-04 08:57:21 | INFO | 链路结束: ecommerce_order_chain | 状态=success | 耗时=210ms

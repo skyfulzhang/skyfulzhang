@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>链路执行报告 - 下单并支付完整流程</title>
+<style>
+body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; margin: 20px; background: #f5f5f5; }
+.container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+h1 { color: #28a745; }
+.summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+.summary-card { background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center; }
+.summary-card h2 { margin: 0; color: #28a745; }
+.step-card { background: #fff; margin: 10px 0; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+th { background: #f8f9fa; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🔗 链路执行报告: 下单并支付完整流程</h1>
+<p style="color:#28a745; font-size: 1.2em; font-weight: bold;">✅ SUCCESS</p>
+<div class="summary">
+    <div class="summary-card"><h2>216ms</h2><p>总耗时</p></div>
+    <div class="summary-card"><h2>6/6</h2><p>步骤成功</p></div>
+    <div class="summary-card"><h2>11/11</h2><p>断言通过</p></div>
+</div>
+<p><b>开始时间:</b> 2026-05-04T08:57:21.201838 | <b>结束时间:</b> 2026-05-04T08:57:21.417678</p>
+<h2>步骤详情</h2>
+
+            <div class="step-card" style="border-left: 4px solid #28a745;">
+                <h3>✅ Step 1: 用户登录 <small style="color:#28a745">(success)</small></h3>
+                <p><b>接口:</b> user_login | <b>耗时:</b> 2ms</p>
+                <p><b>请求:</b> POST https://api.example.com/api/auth/login</p>
+                <p><b>响应状态:</b> 200</p>
+                
+                <h4>提取变量</h4><ul><li><b>token</b> = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock_token</li><li><b>user_id</b> = 10086</li></ul>
+                <h4>断言结果</h4><table><tr><th>断言</th><th>操作符</th><th>期望</th><th>实际</th></tr>
+                <tr>
+                    <td style="color:#28a745">✅ 登录成功</td>
+                    <td>eq</td>
+                    <td>200</td>
+                    <td>200</td>
+                </tr>
+                <tr>
+                    <td style="color:#28a745">✅ token存在</td>
+                    <td>exists</td>
+                    <td>None</td>
+                    <td>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock_token</td>
+                </tr></table>
+            </div>
+            <div class="step-card" style="border-left: 4px solid #28a745;">
+                <h3>✅ Step 2: 搜索商品 <small style="color:#28a745">(success)</small></h3>
+                <p><b>接口:</b> search_product | <b>耗时:</b> 2ms</p>
+                <p><b>请求:</b> GET https://api.example.com/api/products/search</p>
+                <p><b>响应状态:</b> 200</p>
+                
+                <h4>提取变量</h4><ul><li><b>product_id</b> = P20240001</li></ul>
+                <h4>断言结果</h4><table><tr><th>断言</th><th>操作符</th><th>期望</th><th>实际</th></tr>
+                <tr>
+                    <td style="color:#28a745">✅ 搜索成功</td>
+                    <td>eq</td>
+                    <td>200</td>
+                    <td>200</td>
+                </tr></table>
+            </div>
+            <div class="step-card" style="border-left: 4px solid #28a745;">
+                <h3>✅ Step 3: 获取商品详情 <small style="color:#28a745">(success)</small></h3>
+                <p><b>接口:</b> get_product_detail | <b>耗时:</b> 1ms</p>
+                <p><b>请求:</b> GET https://api.example.com/api/products/P20240001</p>
+                <p><b>响应状态:</b> 200</p>
+                
+                <h4>提取变量</h4><ul><li><b>sku_id</b> = SKU_IPHONE15_BLACK_256G</li><li><b>stock</b> = 500</li></ul>
+                <h4>断言结果</h4><table><tr><th>断言</th><th>操作符</th><th>期望</th><th>实际</th></tr>
+                <tr>
+                    <td style="color:#28a745">✅ 商品详情获取成功</td>
+                    <td>eq</td>
+                    <td>200</td>
+                    <td>200</td>
+                </tr>
+                <tr>
+                    <td style="color:#28a745">✅ 库存充足</td>
+                    <td>gt</td>
+                    <td>0</td>
+                    <td>500</td>
+                </tr></table>
+            </div>
+            <div class="step-card" style="border-left: 4px solid #28a745;">
+                <h3>✅ Step 4: 创建订单 <small style="color:#28a745">(success)</small></h3>
+                <p><b>接口:</b> create_order | <b>耗时:</b> 2ms</p>
+                <p><b>请求:</b> POST https://api.example.com/api/orders</p>
+                <p><b>响应状态:</b> 200</p>
+                
+                <h4>提取变量</h4><ul><li><b>order_id</b> = ORD20240001</li><li><b>order_no</b> = NO20240001001</li></ul>
+                <h4>断言结果</h4><table><tr><th>断言</th><th>操作符</th><th>期望</th><th>实际</th></tr>
+                <tr>
+                    <td style="color:#28a745">✅ 创建订单成功</td>
+                    <td>eq</td>
+                    <td>200</td>
+                    <td>200</td>
+                </tr>
+                <tr>
+                    <td style="color:#28a745">✅ order_id存在</td>
+                    <td>exists</td>
+                    <td>None</td>
+                    <td>ORD20240001</td>
+                </tr></table>
+            </div>
+            <div class="step-card" style="border-left: 4px solid #28a745;">
+                <h3>✅ Step 5: 支付订单 <small style="color:#28a745">(success)</small></h3>
+                <p><b>接口:</b> pay_order | <b>耗时:</b> 2ms</p>
+                <p><b>请求:</b> POST https://api.example.com/api/orders/ORD20240001/pay</p>
+                <p><b>响应状态:</b> 200</p>
+                
+                <h4>提取变量</h4><ul><li><b>pay_status</b> = paid</li><li><b>transaction_id</b> = TXN20240001</li></ul>
+                <h4>断言结果</h4><table><tr><th>断言</th><th>操作符</th><th>期望</th><th>实际</th></tr>
+                <tr>
+                    <td style="color:#28a745">✅ 支付成功</td>
+                    <td>eq</td>
+                    <td>200</td>
+                    <td>200</td>
+                </tr>
+                <tr>
+                    <td style="color:#28a745">✅ 支付状态为paid</td>
+                    <td>eq</td>
+                    <td>paid</td>
+                    <td>paid</td>
+                </tr></table>
+            </div>
+            <div class="step-card" style="border-left: 4px solid #28a745;">
+                <h3>✅ Step 6: 查询订单 <small style="color:#28a745">(success)</small></h3>
+                <p><b>接口:</b> query_order | <b>耗时:</b> 1ms</p>
+                <p><b>请求:</b> GET https://api.example.com/api/orders/ORD20240001</p>
+                <p><b>响应状态:</b> 200</p>
+                
+                <h4>提取变量</h4><ul><li><b>order_status</b> = paid</li></ul>
+                <h4>断言结果</h4><table><tr><th>断言</th><th>操作符</th><th>期望</th><th>实际</th></tr>
+                <tr>
+                    <td style="color:#28a745">✅ 查询成功</td>
+                    <td>eq</td>
+                    <td>200</td>
+                    <td>200</td>
+                </tr>
+                <tr>
+                    <td style="color:#28a745">✅ 订单状态为已支付</td>
+                    <td>eq</td>
+                    <td>paid</td>
+                    <td>paid</td>
+                </tr></table>
+            </div>
+</div>
+</body>
+</html>
