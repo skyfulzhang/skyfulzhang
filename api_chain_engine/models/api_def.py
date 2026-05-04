@@ -1,36 +1,35 @@
 # -*- coding: utf-8 -*-
 """
 接口定义模型
-描述一个 HTTP 接口的元数据，支持模板变量
+描述一个 HTTP 接口的完整元信息，支持模板变量
 """
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 @dataclass
 class APIDefinition:
     """
-    接口定义：描述一个 HTTP 接口的完整元信息。
-    url / headers / params / body 中均可使用 {{变量名}} 模板语法。
+    接口定义，描述一个可复用的 HTTP 接口元信息。
+    URL、Headers、Body 均支持 {{variable}} 模板语法。
     """
-    api_id: str                                    # 唯一标识，如 "user_login"
-    name: str                                      # 接口中文名称
-    method: str                                    # HTTP 方法: GET POST PUT DELETE PATCH
-    url: str                                       # 接口地址，支持模板: {{base_url}}/api/login
-    module: str = "默认模块"                         # 所属模块，用于注册中心分组展示
-    description: str = ""                          # 接口描述
-    tags: List[str] = field(default_factory=list)  # 标签列表
-    headers: Dict[str, Any] = field(default_factory=dict)   # 请求头模板
-    params: Dict[str, Any] = field(default_factory=dict)    # Query 参数模板
-    body: Optional[Dict[str, Any]] = field(default_factory=dict)  # 请求体模板
-    timeout: int = 30                              # 超时秒数
-    content_type: str = "application/json"         # 请求 Content-Type
-    auth_required: bool = True                     # 是否需要鉴权
+    api_id: str                        # 唯一标识，如 "user_login"
+    name: str                          # 接口名称，如 "用户登录"
+    method: str                        # HTTP 方法：GET POST PUT DELETE PATCH
+    url: str                           # URL 模板，如 "{{base_url}}/api/auth/login"
+    module: str = "默认模块"            # 所属模块，用于分组展示
+    description: str = ""              # 接口描述
+    headers: dict = field(default_factory=dict)   # 请求头模板
+    params: dict = field(default_factory=dict)    # Query 参数模板
+    body: dict = field(default_factory=dict)      # 请求体模板（JSON）
+    form_data: dict = field(default_factory=dict) # 表单数据模板
+    timeout: int = 30                  # 超时秒数
+    tags: list = field(default_factory=list)      # 标签列表
+    author: str = ""                   # 接口维护人
+    version: str = "v1"               # 接口版本
 
     def __post_init__(self):
         self.method = self.method.upper()
-        if self.method not in {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}:
-            raise ValueError(f"不支持的 HTTP 方法: {self.method}")
 
     def to_dict(self) -> dict:
         return {
@@ -40,13 +39,14 @@ class APIDefinition:
             "url": self.url,
             "module": self.module,
             "description": self.description,
-            "tags": self.tags,
             "headers": self.headers,
             "params": self.params,
             "body": self.body,
+            "form_data": self.form_data,
             "timeout": self.timeout,
-            "content_type": self.content_type,
-            "auth_required": self.auth_required,
+            "tags": self.tags,
+            "author": self.author,
+            "version": self.version,
         }
 
     @classmethod

@@ -1,56 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-链路模型：链路定义 + 执行结果
+链路定义与执行结果模型
 """
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from datetime import datetime
-
-from .step import StepDefinition
-
-
-@dataclass
-class ChainDefinition:
-    """
-    链路定义：一组有序步骤构成的业务流程。
-    保存时只保存结构和参数模板，不保存具体参数值。
-    """
-    chain_id: str
-    name: str
-    description: str = ""
-    steps: List[StepDefinition] = field(default_factory=list)
-    global_variables: Dict[str, Any] = field(default_factory=dict)  # 全局变量模板
-    tags: List[str] = field(default_factory=list)
-    created_at: str = field(default_factory=lambda: datetime.now().isoformat())
-    updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
-
-    def to_dict(self) -> dict:
-        return {
-            "chain_id": self.chain_id,
-            "name": self.name,
-            "description": self.description,
-            "steps": [s.to_dict() for s in self.steps],
-            "global_variables": self.global_variables,
-            "tags": self.tags,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "ChainDefinition":
-        d = dict(data)
-        d["steps"] = [StepDefinition.from_dict(s) for s in d.get("steps", [])]
-        return cls(**d)
 
 
 @dataclass
 class RequestRecord:
-    """请求记录快照"""
+    """请求记录"""
     method: str
     url: str
-    headers: Dict[str, str] = field(default_factory=dict)
-    params: Dict[str, Any] = field(default_factory=dict)
-    body: Optional[Any] = None
+    headers: dict = field(default_factory=dict)
+    params: dict = field(default_factory=dict)
+    body: Any = None
+    curl: str = ""  # 等价 cURL 命令，方便排查
 
     def to_dict(self) -> dict:
         return {
@@ -59,16 +24,19 @@ class RequestRecord:
             "headers": self.headers,
             "params": self.params,
             "body": self.body,
+            "curl": self.curl,
         }
 
 
 @dataclass
 class ResponseRecord:
-    """响应记录快照"""
-    status_code: int
-    headers: Dict[str, str] = field(default_factory=dict)
-    body: Optional[Any] = None
+    """响应记录"""
+    status_code: int = 0
+    headers: dict = field(default_factory=dict)
+    body: Any = None
     raw_text: str = ""
+    duration_ms: float = 0.0
+    size_bytes: int = 0
 
     def to_dict(self) -> dict:
         return {
@@ -76,6 +44,8 @@ class ResponseRecord:
             "headers": dict(self.headers),
             "body": self.body,
             "raw_text": self.raw_text,
+            "duration_ms": self.duration_ms,
+            "size_bytes": self.size_bytes,
         }
 
 
@@ -85,6 +55,7 @@ class AssertionRecord:
     name: str
     passed: bool
     operator: str
+    expression: str
     actual: Any
     expected: Any
     message: str = ""
@@ -95,6 +66,7 @@ class AssertionRecord:
             "name": self.name,
             "passed": self.passed,
             "operator": self.operator,
+            "expression": self.expression,
             "actual": self.actual,
             "expected": self.expected,
             "message": self.message,
@@ -104,28 +76,27 @@ class AssertionRecord:
 
 @dataclass
 class StepResult:
-    """单步骤执行结果"""
+    """单步执行结果"""
     step_id: str
     api_id: str
     name: str
-    status: str                                                   # success | failed | skipped | error
+    status: str = "pending"           # pending | success | failed | skipped
     request: Optional[RequestRecord] = None
     response: Optional[ResponseRecord] = None
-    extractions: Dict[str, Any] = field(default_factory=dict)    # 本步骤提取的变量
-    assertions: List[AssertionRecord] = field(default_factory=list)
+    extractions: dict = field(default_factory=dict)
+    assertions: list = field(default_factory=list)   # list[AssertionRecord]
     duration_ms: float = 0.0
     error: Optional[str] = None
-    retry_count: int = 0
+    started_at: str = ""
+    finished_at: str = ""
 
     @property
     def assertion_passed(self) -> bool:
         return all(a.passed for a in self.assertions)
 
     @property
-    def assertion_summary(self) -> str:
-        total = len(self.assertions)
-        passed = sum(1 for a in self.assertions if a.passed)
-        return f"{passed}/{total}"
+    def failed_assertions(self) -> list:
+        return [a for a in self.assertions if not a.passed]
 
     def to_dict(self) -> dict:
         return {
@@ -139,7 +110,46 @@ class StepResult:
             "assertions": [a.to_dict() for a in self.assertions],
             "duration_ms": self.duration_ms,
             "error": self.error,
-            "retry_count": self.retry_count,
+            "started_at": self.started_at,
+            "finished_at": self.finished_at,
+        }
+
+
+@dataclass
+class CleanupResult:
+    """数据清理任务执行结果"""
+    task_name: str
+    success: bool
+    message: str = ""
+    error: str = ""
+
+
+@dataclass
+class ChainDefinition:
+    """链路定义，描述一条完整的接口调用链路"""
+    chain_id: str
+    name: str
+    description: str = ""
+    steps: list = field(default_factory=list)              # list[StepDefinition]
+    global_variables: dict = field(default_factory=dict)   # 全局变量（base_url 等）
+    tags: list = field(default_factory=list)
+    author: str = ""
+    version: str = "1.0"
+    created_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
+
+    def to_dict(self) -> dict:
+        return {
+            "chain_id": self.chain_id,
+            "name": self.name,
+            "description": self.description,
+            "steps": [s.to_dict() for s in self.steps],
+            "global_variables": self.global_variables,
+            "tags": self.tags,
+            "author": self.author,
+            "version": self.version,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
         }
 
 
@@ -148,22 +158,23 @@ class ChainResult:
     """链路执行结果"""
     chain_id: str
     chain_name: str
-    status: str                                                    # success | failed
-    step_results: List[StepResult] = field(default_factory=list)
-    context_snapshot: Dict[str, Any] = field(default_factory=dict)
+    status: str = "pending"           # success | failed | aborted
+    step_results: list = field(default_factory=list)   # list[StepResult]
+    context_snapshot: dict = field(default_factory=dict)
     total_duration_ms: float = 0.0
     started_at: str = ""
     finished_at: str = ""
-    error: Optional[str] = None
 
     @property
     def summary(self) -> dict:
         total = len(self.step_results)
-        success = sum(1 for r in self.step_results if r.status == "success")
-        failed = sum(1 for r in self.step_results if r.status == "failed")
-        skipped = sum(1 for r in self.step_results if r.status == "skipped")
-        total_assertions = sum(len(r.assertions) for r in self.step_results)
-        passed_assertions = sum(sum(1 for a in r.assertions if a.passed) for r in self.step_results)
+        success = sum(1 for s in self.step_results if s.status == "success")
+        failed = sum(1 for s in self.step_results if s.status == "failed")
+        skipped = sum(1 for s in self.step_results if s.status == "skipped")
+        total_assertions = sum(len(s.assertions) for s in self.step_results)
+        passed_assertions = sum(
+            sum(1 for a in s.assertions if a.passed) for s in self.step_results
+        )
         return {
             "total_steps": total,
             "success_steps": success,
@@ -179,20 +190,10 @@ class ChainResult:
             "chain_id": self.chain_id,
             "chain_name": self.chain_name,
             "status": self.status,
-            "step_results": [r.to_dict() for r in self.step_results],
+            "step_results": [s.to_dict() for s in self.step_results],
             "context_snapshot": self.context_snapshot,
             "total_duration_ms": self.total_duration_ms,
             "started_at": self.started_at,
             "finished_at": self.finished_at,
-            "error": self.error,
             "summary": self.summary,
         }
-
-
-@dataclass
-class CleanupResult:
-    """清理任务执行结果"""
-    task_name: str
-    success: bool
-    message: str = ""
-    error: Optional[str] = None
