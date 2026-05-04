@@ -1,27 +1,10 @@
-# HTTP 请求
 requests>=2.31.0
 requests-mock>=1.11.0
-
-# JSONPath / JMESPath
 jsonpath-ng>=1.6.0
 jmespath>=1.0.1
-
-# 控制台美化
 rich>=13.7.0
-
-# 日志
 loguru>=0.7.2
-
-# 序列化
 pyyaml>=6.0.1
-
-# 测试
 pytest>=7.4.0
 pytest-cov>=4.1.0
-pytest-mock>=3.12.0
-
-# 类型支持
 dataclasses-json>=0.6.3
-
-# 时间处理
-python-dateutil>=2.8.2
