@@ -39,10 +39,10 @@ class TestBasicVariableResolution:
         result = parser.parse_string("{{base_url}}/api/users/{{user_id}}", context)
         assert result == "https://api.example.com/api/users/10086"
 
-    def test_variable_not_found_returns_original(self, parser, context):
-        result = parser.parse_string("{{nonexistent}}", context)
-        # 未找到的变量返回 None，字符串替换保留原始
-        assert result is None or result == "{{nonexistent}}" or result == "None"
+    def test_variable_not_found_returns_original_placeholder(self, parser, context):
+        # 变量不存在时，单变量模板返回 None（调用方可通过 default 处理）
+        result = parser.parse("{{nonexistent}}", context)
+        assert result is None
 
     def test_no_template(self, parser, context):
         result = parser.parse_string("plain string", context)

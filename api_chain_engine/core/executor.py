@@ -264,8 +264,12 @@ class ChainExecutor:
         return self._session.request(method, url, **request_data)
 
     def _run_script(self, script: str, context: ExecutionContext) -> None:
-        """执行 Python 脚本（在上下文环境中）"""
-        exec(script, {"context": context, "__builtins__": __builtins__})  # noqa: S102
+        """执行 Python 脚本（在受限上下文环境中）。
+        
+        安全说明：此功能仅用于受信任的测试工程师编写的内部脚本，不应暴露给不可信的外部输入。
+        执行环境中仅提供 context 对象，不提供文件系统或网络访问能力。
+        """
+        exec(script, {"context": context, "__builtins__": {}})  # noqa: S102
 
     def dry_run(
         self,

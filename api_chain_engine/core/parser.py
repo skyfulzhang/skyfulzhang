@@ -55,7 +55,9 @@ class ParameterParser:
         if not isinstance(template, str):
             return template
 
-        # 如果整个字符串就是一个模板变量，直接返回原始类型（[^{}]+ 防止匹配嵌套花括号）
+        # 如果整个字符串就是一个模板变量，直接返回原始类型。
+        # 注意：使用 [^{}]+ 而不是 .+ 以防止对多变量 URL 模式（如 {{base_url}}/api/orders/{{order_id}}）
+        # 进行错误的全匹配（fullmatch 会因回溯而把两个变量之间的内容也纳入单个表达式）。
         full_match = re.fullmatch(r'\{\{([^{}]+?)\}\}', template)
         if full_match:
             return self._resolve_expression(full_match.group(1).strip(), context)

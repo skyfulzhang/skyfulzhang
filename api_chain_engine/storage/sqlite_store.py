@@ -24,6 +24,8 @@ class ChainStore:
     def _get_conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
+        # WAL（Write-Ahead Logging）模式：提升并发读取性能，避免读写互相阻塞，
+        # 适合多线程/多进程同时读取链路模板的使用场景。
         conn.execute("PRAGMA journal_mode=WAL")
         return conn
 
