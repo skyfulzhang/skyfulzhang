@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 全局配置模块
-支持多环境配置，可通过环境变量覆盖
+支持多环境切换：test / staging / prod
 """
 import os
 from dataclasses import dataclass, field
@@ -9,59 +9,61 @@ from typing import Dict
 
 
 @dataclass
+class EnvironmentConfig:
+    """单环境配置"""
+    name: str
+    base_url: str
+    timeout: int = 30
+    extra_headers: Dict[str, str] = field(default_factory=dict)
+
+
 class Config:
-    """全局配置类，支持环境变量覆盖"""
+    """全局配置，优先读取环境变量"""
 
-    # 服务地址
-    BASE_URL: str = os.getenv("BASE_URL", "https://api.example.com")
+    # ─── 运行环境 ───────────────────────────────────────────────
+    ENV: str = os.getenv("ACE_ENV", "test")
 
-    # HTTP 配置
-    TIMEOUT: int = int(os.getenv("TIMEOUT", "30"))
-    MAX_RETRY: int = int(os.getenv("MAX_RETRY", "3"))
-    RETRY_INTERVAL: float = float(os.getenv("RETRY_INTERVAL", "1.0"))
+    # ─── 数据库 ─────────────────────────────────────────────────
+    DB_PATH: str = os.getenv("ACE_DB_PATH", "chain_store.db")
 
-    # 数据库
-    DB_PATH: str = os.getenv("DB_PATH", "chain_store.db")
+    # ─── 日志 ───────────────────────────────────────────────────
+    LOG_LEVEL: str = os.getenv("ACE_LOG_LEVEL", "INFO")
+    LOG_FILE: str = os.getenv("ACE_LOG_FILE", "logs/execution.log")
 
-    # 日志
-    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
-    LOG_FILE: str = os.getenv("LOG_FILE", "logs/execution.log")
+    # ─── 报告 ───────────────────────────────────────────────────
+    REPORT_DIR: str = os.getenv("ACE_REPORT_DIR", "reports/")
 
-    # 报告
-    REPORT_DIR: str = os.getenv("REPORT_DIR", "reports/")
+    # ─── 请求 ───────────────────────────────────────────────────
+    TIMEOUT: int = int(os.getenv("ACE_TIMEOUT", "30"))
+    MAX_RETRY: int = int(os.getenv("ACE_MAX_RETRY", "3"))
+    RETRY_INTERVAL: float = float(os.getenv("ACE_RETRY_INTERVAL", "1.0"))
 
-    # 运行环境: test | staging | prod
-    ENV: str = os.getenv("ENV", "test")
+    # ─── Mock ───────────────────────────────────────────────────
+    MOCK_ENABLED: bool = os.getenv("ACE_MOCK_ENABLED", "true").lower() == "true"
 
-    # Mock 模式（测试时启用）
-    MOCK_ENABLED: bool = os.getenv("MOCK_ENABLED", "true").lower() == "true"
+    # ─── 多环境 base_url ────────────────────────────────────────
+    ENVIRONMENTS: Dict[str, EnvironmentConfig] = {
+        "test": EnvironmentConfig(
+            name="test",
+            base_url="http://test-api.example.com",
+            timeout=30,
+        ),
+        "staging": EnvironmentConfig(
+            name="staging",
+            base_url="http://staging-api.example.com",
+            timeout=20,
+        ),
+        "prod": EnvironmentConfig(
+            name="prod",
+            base_url="https://api.example.com",
+            timeout=10,
+        ),
+    }
 
-    # 默认请求头
-    DEFAULT_HEADERS: Dict[str, str] = field(default_factory=lambda: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "User-Agent": "ApiChainEngine/1.0.0",
-    })
+    @classmethod
+    def current_env(cls) -> EnvironmentConfig:
+        return cls.ENVIRONMENTS.get(cls.ENV, cls.ENVIRONMENTS["test"])
 
-    # 环境变量配置映射
-    ENV_CONFIGS: Dict[str, Dict] = field(default_factory=lambda: {
-        "test": {
-            "base_url": "https://test-api.example.com",
-            "timeout": 30,
-        },
-        "staging": {
-            "base_url": "https://staging-api.example.com",
-            "timeout": 60,
-        },
-        "prod": {
-            "base_url": "https://api.example.com",
-            "timeout": 30,
-        },
-    })
-
-    def get_env_config(self) -> Dict:
-        return self.ENV_CONFIGS.get(self.ENV, {})
-
-
-# 全局配置单例
-config = Config()
+    @classmethod
+    def base_url(cls) -> str:
+        return cls.current_env().base_url
