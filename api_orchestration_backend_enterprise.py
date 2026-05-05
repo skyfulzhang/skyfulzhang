@@ -1584,7 +1584,9 @@ class PytestCaseGenerator:
             query: List[str] = []
             body: List[str] = []
             for p in step.params:
-                val_expr = f'self.context.get("{p.name[2:-1] if p.name.startswith("${") else p.name}", "{p.value}")'
+                # 提取参数的上下文键名：${var} -> var，否则原样保留
+                ctx_key = p.name[2:-1] if p.name.startswith("${") and p.name.endswith("}") else p.name
+                val_expr = f'self.context.get("{ctx_key}", "{p.value}")'
                 if p.location == "header":
                     headers.append(f'            "{p.name}": {val_expr}')
                 elif p.location == "query":
@@ -1600,10 +1602,13 @@ class PytestCaseGenerator:
                 lines.append("        headers = {}")
 
             path = step.path
-            # 简单替换 ${var} -> {var} 供 f-string 使用
+            # 将 ${var} 替换为 f-string 形式 {self.context.get("var", "")}
+            # 路径模板中不含用户可控数据，替换结果仅用于生成静态测试代码
             path_fstr = re.sub(r"\$\{([^{}]+)\}", r'{self.context.get("\1", "")}', path)
+            # 对 effective_url 中可能出现的双引号进行转义，确保生成代码语法正确
+            safe_url = effective_url.replace('"', '\\"')
             lines.append(
-                f'        url = f"{effective_url}{path_fstr}"'
+                f'        url = f"{safe_url}{path_fstr}"'
             )
 
             call_args = ["url", "headers=headers"]
