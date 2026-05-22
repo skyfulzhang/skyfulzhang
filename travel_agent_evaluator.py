@@ -30,7 +30,6 @@ except ImportError as import_err:  # pragma: no cover
 else:
     _LANGCHAIN_IMPORT_ERROR = None
 
-
 # ================================
 # § 1 Imports & Config
 # ================================
@@ -45,7 +44,6 @@ JUDGE_BASE_URL = os.getenv(
     "DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"
 )
 JUDGE_API_KEY = os.getenv("DASHSCOPE_API_KEY") or os.getenv("OPENAI_API_KEY")
-
 
 # ================================
 # § 2 Logging (EvalLogger)
@@ -236,7 +234,6 @@ def build_golden_dataset() -> List[GoldenCase]:
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
-
 # ================================
 # § 5 EvalTokenCallback + agent runner
 # ================================
@@ -384,7 +381,6 @@ def _rating_by_score(score: float) -> str:
 
 def _verdict_by_score(score: float) -> str:
     return "PASS" if score >= 0.7 else "FAIL"
-
 
 def eval_tool_selection_accuracy(case: GoldenCase, trace: TraceRecord, logger: EvalLogger) -> MetricResult:
     actual = set(trace.actual_tools_called)
@@ -578,7 +574,6 @@ def _ensure_langchain_ready() -> None:
         ) from _LANGCHAIN_IMPORT_ERROR
     if not JUDGE_API_KEY:
         raise RuntimeError("Missing judge API key. Set DASHSCOPE_API_KEY or OPENAI_API_KEY.")
-
 
 def _build_trace_summary(trace: TraceRecord, max_items: int = 12) -> str:
     items = []
@@ -890,7 +885,6 @@ def _console_summary(report: EvalReport) -> None:
     print("-------------------------------------------")
     print(f"加权总分   : {report.weighted_total_score:.3f}")
     print("===========================================\n")
-
 
 def write_report_files(report: EvalReport, repo_dir: str, logger: EvalLogger) -> Tuple[str, str]:
     now = _utc_now()
