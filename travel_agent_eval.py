@@ -18,8 +18,12 @@ import random
 import re
 import time
 from dataclasses import asdict, dataclass, field
-from datetime import date, datetime
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, TypedDict
+
+try:
+    from langchain.prompts import PromptTemplate
+except Exception:  # pragma: no cover - 依赖可选
+    PromptTemplate = None
 
 try:
     from langgraph.graph import END, StateGraph
@@ -514,11 +518,17 @@ class LLMJudge:
             "criteria": criteria,
             "output_format": {"score": "number", "reason": "string"},
         }
-        prompt = (
-            "你是企业级Agent评估专家。请严格依据给定criteria输出JSON，"
-            "仅输出JSON，不要额外文本。\n"
-            f"{json.dumps(payload, ensure_ascii=False)}"
-        )
+        if PromptTemplate is not None:
+            template = PromptTemplate.from_template(
+                "你是企业级Agent评估专家。请严格依据给定criteria输出JSON，仅输出JSON，不要额外文本。\n{payload}"
+            )
+            prompt = template.format(payload=json.dumps(payload, ensure_ascii=False))
+        else:
+            prompt = (
+                "你是企业级Agent评估专家。请严格依据给定criteria输出JSON，"
+                "仅输出JSON，不要额外文本。\n"
+                f"{json.dumps(payload, ensure_ascii=False)}"
+            )
 
         if self.client is None:
             reason = "回退规则：无可用LLM客户端，返回安全默认值。"
